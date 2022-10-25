@@ -15,7 +15,7 @@ from sklearn.model_selection import train_test_split
 import plotly.graph_objs as go
 dash.register_page(__name__, path='/voorspellingen', name='Voorspellingen') # '/' is home page
 
-df = pd.read_csv('/Users/nielsbouwman/Downloads/Orders-Tabel 1.csv',sep=";",decimal=',')
+df = pd.read_csv('Orders-Tabel 1.csv',sep=";",decimal=',')
 df["OrderDate"] = pd.to_datetime(df["Order Date"])
 df["OrderYear"] = df.OrderDate.dt.year
 df["OrderMonth"] = df.OrderDate.dt.month_name()
