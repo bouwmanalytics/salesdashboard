@@ -1,4 +1,3 @@
-
 import dash
 from dash import dcc
 from dash import html
@@ -62,7 +61,7 @@ pil_image = Image.open("assets/Schermafbeelding 2022-08-08 om 15.38.03.png")
 
 sidebar = html.Div(
     [
-        html.H2('Sales Dashboard'),
+        html.H2('Winkel Dashboard'),
         html.Hr(),
         dbc.Nav(
             [
@@ -94,7 +93,7 @@ app.layout = dbc.Container([
     dbc.Col(
         [
             dash.page_container
-        ],style={"margin-left": "30px", "margin-right": "0px"})
+        ],style={"margin-left": "30px", "margin-right": "0px", "width": "80vw"})
 
 ])
 
