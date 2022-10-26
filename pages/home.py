@@ -12,6 +12,9 @@ df["OrderYear"] = df.OrderDate.dt.year
 df["OrderMonth"] = df.OrderDate.dt.month_name()
 df["OrderMonthNr"] = df.OrderDate.dt.month
 
+
+df2 = df.copy()
+df2.rename(columns={'Category': 'Categorie', 'Sales': 'Omzet', "OrderYear": "Order Jaar"}, inplace=True)
 dash.register_page(__name__, path='/', name='Home', title= "Home") # '/' is home page
 TEXT_STYLE = {
     #'textAlign': 'center',
@@ -36,6 +39,6 @@ layout = html.Div(
         ]),
 
         dbc.Row([
-            dash_table.DataTable(data = df[["Order ID", "Segment", "Category", "Sales", "OrderYear"]].head().to_dict('records'))
+            dash_table.DataTable(data = df2[["Order ID", "Segment", "Categorie", "Omzet", "Order Jaar"]].head().to_dict('records'))
         ])
 ])
