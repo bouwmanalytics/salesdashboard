@@ -7,16 +7,37 @@ import plotly.express as px
 import pandas as pd
 import pathlib
 import numpy as np
-from calendar import month_name
+
 
 dash.register_page(__name__, path='/Jaarlijks', name='Jaarlijks', title= "Jaarlijks") # '/' is home page
 
+month_name = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni',
+       'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December']
 df = pd.read_csv('Orders-Tabel 1.csv',sep=";",decimal=',')
 df["OrderDate"] = pd.to_datetime(df["Order Date"])
 df["OrderYear"] = df.OrderDate.dt.year
 df["OrderMonth"] = df.OrderDate.dt.month_name()
 df["OrderMonthNr"] = df.OrderDate.dt.month
 df["ShipDate"] = pd.to_datetime(df["Ship Date"])
+def replace_all(text, dic):
+    for i, j in dic.items():
+        text = text.str.replace(i, j)
+    return text
+
+dic={
+    "June": "Juni",
+    "January": "Januari",
+    "February": "Februari",
+    "March": "Maart",
+    "May": "Mei",
+    "July": "Juli",
+    "August": "Augustus",
+    "October": "Oktober"
+}
+
+df.OrderMonth = replace_all(df.OrderMonth,dic)
+
+
 TEXT_STYLE = {
     #'textAlign': 'center',
     'color': '#000000'
@@ -26,10 +47,10 @@ layout = html.Div(
     [
         dbc.Row([
             dbc.Col([
-                html.H2('Yearly Analysis',
+                html.H2('Jaarlijkse analyse',
                         style=TEXT_STYLE)]),
             dbc.Col([
-                html.P("Choose a year",style={"margin-top": "10px", "width": "100%"}),
+                html.P("Kies een jaar",style={"margin-top": "10px", "width": "100%"}),
                 dcc.Dropdown(np.sort(df.OrderYear.unique()), np.sort(df.OrderYear.unique())[0], id="year_dropdown"),
             ]),
         ]),
@@ -39,7 +60,7 @@ layout = html.Div(
         ]),
         dbc.Row([
             dbc.Col([
-                dbc.Row([html.P("Total customers", style={"text-decoration": "underline"})]),
+                dbc.Row([html.P("Totaal aantal klanten", style={"text-decoration": "underline"})]),
                 dbc.Row([html.P(id="ncust", style={"margin-bottom": "20px","margin-right": "10px"}),])
             ]),
             dbc.Col([
@@ -47,7 +68,7 @@ layout = html.Div(
                 dbc.Row([html.P(id="norders", style={"margin-bottom": "20px","margin-right": "10px"})])
             ]),
             dbc.Col([
-                dbc.Row([html.P("Average shipping time", style={"text-decoration": "underline"})]),
+                dbc.Row([html.P("Gemiddelde verzendtijd", style={"text-decoration": "underline"})]),
                 dbc.Row([html.P(id="avg_ship", style={"margin-bottom": "20px","margin-right": "10px"})])
             ])
         ]),
@@ -57,15 +78,15 @@ layout = html.Div(
         dbc.Row([
             dbc.Col([
                 dbc.Row([
-                    html.P("Choose a filter",style={"margin-top": "10px"}),
-                    dcc.Dropdown(["Orders","Sales", "Profit", "Average Profit"], "Orders", id="filter_dropdown_1"),
+                    html.P("Kies een filter",style={"margin-top": "10px"}),
+                    dcc.Dropdown(["Bestellingen","Omzet", "Winst", "Gemiddelde winst"], "Bestellingen", id="filter_dropdown_1"),
                 ]),
                 dcc.Graph(id="rel_1", figure = {})
             ],width=8),
             dbc.Col([
                 dbc.Row([
-                    html.P("Choose a filter",style={"margin-top": "10px"}),
-                    dcc.Dropdown(["Region","Ship Mode", "Category", "Segment"], "Region", id="filter_dropdown_2"),
+                    html.P("Kies een filter",style={"margin-top": "10px"}),
+                    dcc.Dropdown(["Regio","Verzendmethode", "Categorie", "Segment"], "Regio", id="filter_dropdown_2"),
             ]),
                 dbc.Row([
                     dcc.Graph(id="bar_graph", figure = {})
@@ -97,14 +118,14 @@ def print_output(year_chosen):
     [Input("filter_dropdown_1", "value")]
     )
 def print_text(filter_dropdown):
-    if filter_dropdown == "Orders":
-        return "Total Orders"
-    if filter_dropdown == "Sales":
-        return "Total Sales"
-    if filter_dropdown == "Profit":
-        return "Total Profit"
-    if filter_dropdown == "Average Profit":
-        return "Average profit"
+    if filter_dropdown == "Bestellingen":
+        return "Totaal aantal bestellingen"
+    if filter_dropdown == "Omzet":
+        return "Totaal omzet"
+    if filter_dropdown == "Winst":
+        return "Totale winst"
+    if filter_dropdown == "Gemiddelde winst":
+        return "Gemiddelde winst"
 @callback(
     Output("norders",  "children"),
     [Input("year_dropdown","value")],
@@ -112,18 +133,18 @@ def print_text(filter_dropdown):
     )
 def print_output(year_chosen, filter_dropdown):
     if year_chosen > 0:
-        if filter_dropdown == "Orders":
+        if filter_dropdown == "Bestellingen":
             norders = np.round(df.groupby("OrderYear")["Order ID"].nunique()[year_chosen],2)
             return norders
 
-        if filter_dropdown == "Sales":
+        if filter_dropdown == "Omzet":
             nsales = np.round(df.groupby("OrderYear")["Sales"].sum()[year_chosen],2)
             return nsales
 
-        if filter_dropdown == "Profit":
+        if filter_dropdown == "Winst":
             profit = np.round(df.groupby("OrderYear")["Profit"].sum()[year_chosen],2)
             return profit
-        if filter_dropdown == "Average Profit":
+        if filter_dropdown == "Gemiddelde winst":
             avg_profit = np.round(df.groupby("OrderYear")["Profit"].mean()[year_chosen],2)
             return avg_profit
         else:
@@ -151,46 +172,46 @@ def print_output(year_chosen):
     [Input("filter_dropdown_2","value")],
 )
 def get_graph(year_chosen, filter1_chosen, filter2_chosen):
-    if filter1_chosen == "Average Profit":
-        if filter2_chosen == "Region":
+    if filter1_chosen == "Gemiddelde winst":
+        if filter2_chosen == "Regio":
             if year_chosen > 0:
                 df_year = df[df["OrderYear"] == year_chosen]
                 profits_region = []
                 for i in sorted(df_year["Region"].unique()):
                     profits_region.append(df_year[df_year["Region"] == i]["Profit"].mean())
-                fig = px.bar(x=sorted(df_year["Region"].unique()), y = profits_region, title=f"Average profit per region in {year_chosen}", text=np.round(profits_region,2))
-                fig.update_layout(xaxis_title="Region",
-                                  yaxis_title="Average Profit", )
+                fig = px.bar(x=sorted(df_year["Region"].unique()), y = profits_region, title=f"Gemiddelde winst per regio in {year_chosen}", text=np.round(profits_region,2))
+                fig.update_layout(xaxis_title="Regio",
+                                  yaxis_title="Gemiddelde winst", )
                 return fig
 
             if year_chosen == 0:
                 raise dash.exceptions.PreventUpdate
 
-        if filter2_chosen == "Ship Mode":
+        if filter2_chosen == "Verzondmethode":
             if year_chosen > 0:
                 df_year = df[df["OrderYear"] == year_chosen]
                 profits_shipmode = []
                 for i in sorted(df_year["Ship Mode"].unique()):
                     profits_shipmode.append(df_year[df_year["Ship Mode"] == i]["Profit"].mean())
                 fig = px.bar(x=sorted(df_year["Ship Mode"].unique()), y=profits_shipmode, text=np.round(profits_shipmode,2),
-                             title=f"Average profit per ship mode in {year_chosen}")
-                fig.update_layout(xaxis_title="Ship Mode",
-                                  yaxis_title="Average Profit", )
+                             title=f"Gemiddelde winst per verzendmethode in {year_chosen}")
+                fig.update_layout(xaxis_title="Verzendmethode",
+                                  yaxis_title="Gemiddelde winst", )
                 return fig
 
             if year_chosen == 0:
                 raise dash.exceptions.PreventUpdate
 
-        if filter2_chosen == "Category":
+        if filter2_chosen == "Categorie":
             if year_chosen > 0:
                 df_year = df[df["OrderYear"] == year_chosen]
                 profits_category = []
                 for i in sorted(df_year["Category"].unique()):
                     profits_category.append(df_year[df_year["Category"] == i]["Profit"].mean())
                 fig = px.bar(x=sorted(df_year["Category"].unique()), y=profits_category, text=np.round(profits_category,2),
-                             title=f"Average profit per category in {year_chosen}")
-                fig.update_layout(xaxis_title="Category",
-                                  yaxis_title="Average Profit", )
+                             title=f"Gemiddelde winst per categorie in {year_chosen}")
+                fig.update_layout(xaxis_title="Categorie",
+                                  yaxis_title="Gemiddelde winst", )
                 return fig
 
             if year_chosen == 0:
@@ -202,9 +223,9 @@ def get_graph(year_chosen, filter1_chosen, filter2_chosen):
                 for i in sorted(df_year["Segment"].unique()):
                     profits_segment.append(df_year[df_year["Segment"] == i]["Profit"].mean())
                 fig = px.bar(x=sorted(df_year["Segment"].unique()), y=profits_segment, text=np.round(profits_segment,2),
-                             title=f"Average profit per segment in {year_chosen}")
+                             title=f"Gemiddelde winst per segment in {year_chosen}")
                 fig.update_layout(xaxis_title="Segment",
-                                  yaxis_title="AverageProfit", )
+                                  yaxis_title="Gemiddelde winst", )
                 return fig
 
             if year_chosen == 0:
@@ -213,47 +234,47 @@ def get_graph(year_chosen, filter1_chosen, filter2_chosen):
         else:
             raise dash.exceptions.PreventUpdate
 
-    if filter1_chosen == "Profit":
-        if filter2_chosen == "Region":
+    if filter1_chosen == "Winst":
+        if filter2_chosen == "Regio":
             if year_chosen > 0:
                 df_year = df[df["OrderYear"] == year_chosen]
                 profits_region = []
                 for i in sorted(df_year["Region"].unique()):
                     profits_region.append(df_year[df_year["Region"] == i]["Profit"].sum())
                 fig = px.bar(x=sorted(df_year["Region"].unique()), y=profits_region, text=np.round(profits_region,2),
-                             title=f"Profit per region in {year_chosen}")
-                fig.update_layout(xaxis_title="Region",
-                                  yaxis_title="Profit", )
+                             title=f"Winst per regio in {year_chosen}")
+                fig.update_layout(xaxis_title="Regio",
+                                  yaxis_title="Winst", )
                 return fig
 
             if year_chosen == 0:
                 raise dash.exceptions.PreventUpdate
 
-        if filter2_chosen == "Ship Mode":
+        if filter2_chosen == "Verzendmethode":
             if year_chosen > 0:
                 df_year = df[df["OrderYear"] == year_chosen]
                 profits_shipmode = []
                 for i in sorted(df_year["Ship Mode"].unique()):
                     profits_shipmode.append(df_year[df_year["Ship Mode"] == i]["Profit"].sum())
                 fig = px.bar(x=sorted(df_year["Ship Mode"].unique()), y=profits_shipmode, text=np.round(profits_shipmode,2),
-                             title=f"Profit per ship mode in {year_chosen}")
-                fig.update_layout(xaxis_title="Ship Mode",
-                                  yaxis_title="Profit", )
+                             title=f"Winst per verzendmethode in {year_chosen}")
+                fig.update_layout(xaxis_title="Verzendmethode",
+                                  yaxis_title="Winst", )
                 return fig
 
             if year_chosen == 0:
                 raise dash.exceptions.PreventUpdate
 
-        if filter2_chosen == "Category":
+        if filter2_chosen == "Categorie":
             if year_chosen > 0:
                 df_year = df[df["OrderYear"] == year_chosen]
                 profits_category = []
                 for i in sorted(df_year["Category"].unique()):
                     profits_category.append(df_year[df_year["Category"] == i]["Profit"].sum())
                 fig = px.bar(x=sorted(df_year["Category"].unique()), y=profits_category, text=np.round(profits_category,2),
-                             title=f"Profit per category in {year_chosen}")
-                fig.update_layout(xaxis_title="Category",
-                                  yaxis_title="Profit", )
+                             title=f"Winst per categorie in {year_chosen}")
+                fig.update_layout(xaxis_title="Categorie",
+                                  yaxis_title="Winst", )
                 return fig
 
             if year_chosen == 0:
@@ -266,9 +287,9 @@ def get_graph(year_chosen, filter1_chosen, filter2_chosen):
                     profits_segment.append(
                         df_year[df_year["Segment"] == i]["Profit"].sum())
                 fig = px.bar(x=sorted(df_year["Segment"].unique()), y=profits_segment,text=np.round(profits_segment,2),
-                             title=f"Profit per segment in {year_chosen}")
+                             title=f"Winst per segment in {year_chosen}")
                 fig.update_layout(xaxis_title="Segment",
-                                  yaxis_title="Profit", )
+                                  yaxis_title="Winst", )
                 return fig
 
             if year_chosen == 0:
@@ -277,47 +298,47 @@ def get_graph(year_chosen, filter1_chosen, filter2_chosen):
         else:
             raise dash.exceptions.PreventUpdate
 
-    if filter1_chosen == "Orders":
-        if filter2_chosen == "Region":
+    if filter1_chosen == "Bestellingen":
+        if filter2_chosen == "Regio":
             if year_chosen > 0:
                 df_year = df[df["OrderYear"] == year_chosen]
                 orders_region = []
                 for i in sorted(df_year["Region"].unique()):
                     orders_region.append(len(df_year[df_year["Region"] == i]["Order ID"].unique()))
                 fig = px.bar(x=sorted(df_year["Region"].unique()), y=orders_region, text=np.round(orders_region,2),
-                             title=f"Orders per region in {year_chosen}")
-                fig.update_layout(xaxis_title="Region",
-                                  yaxis_title="Orders", )
+                             title=f"Bestellingen per regio in {year_chosen}")
+                fig.update_layout(xaxis_title="Regio",
+                                  yaxis_title="Bestellingen", )
                 return fig
 
             if year_chosen == 0:
                 raise dash.exceptions.PreventUpdate
 
-        if filter2_chosen == "Ship Mode":
+        if filter2_chosen == "Verzendmethode":
             if year_chosen > 0:
                 df_year = df[df["OrderYear"] == year_chosen]
                 orders_shipmode = []
                 for i in sorted(df_year["Ship Mode"].unique()):
                     orders_shipmode.append(len(df_year[df_year["Ship Mode"] == i]["Order ID"].unique()))
                 fig = px.bar(x=sorted(df_year["Ship Mode"].unique()), y=orders_shipmode, text=np.round(orders_shipmode,2),
-                             title=f"Orders per ship mode in {year_chosen}")
-                fig.update_layout(xaxis_title="Ship Mode",
-                                  yaxis_title="Orders", )
+                             title=f"Bestellingen per verzendmethode in {year_chosen}")
+                fig.update_layout(xaxis_title="Verzendmethode",
+                                  yaxis_title="Bestellingen", )
                 return fig
 
             if year_chosen == 0:
                 raise dash.exceptions.PreventUpdate
 
-        if filter2_chosen == "Category":
+        if filter2_chosen == "Categorie":
             if year_chosen > 0:
                 df_year = df[df["OrderYear"] == year_chosen]
                 orders_category = []
                 for i in sorted(df_year["Category"].unique()):
                     orders_category.append(len(df_year[df_year["Category"] == i]["Order ID"].unique()))
                 fig = px.bar(x=sorted(df_year["Category"].unique()), y=orders_category, text=np.round(orders_category,2),
-                             title=f"Orders per category in {year_chosen}")
-                fig.update_layout(xaxis_title="Category",
-                                  yaxis_title="Profit", )
+                             title=f"Bestellingen per categorie in {year_chosen}")
+                fig.update_layout(xaxis_title="Categorie",
+                                  yaxis_title="Bestellingen", )
                 return fig
 
             if year_chosen == 0:
@@ -330,9 +351,9 @@ def get_graph(year_chosen, filter1_chosen, filter2_chosen):
                     orders_segment.append(
                         len(df_year[df_year["Segment"] == i]["Order ID"].unique()))
                 fig = px.bar(x=sorted(df_year["Segment"].unique()), y=orders_segment,text=np.round(orders_segment,2),
-                             title=f"Orders per segment in {year_chosen}")
+                             title=f"Bestellingen per segment in {year_chosen}")
                 fig.update_layout(xaxis_title="Segment",
-                                  yaxis_title="Orders", )
+                                  yaxis_title="Bestellingen", )
                 return fig
 
             if year_chosen == 0:
@@ -341,47 +362,47 @@ def get_graph(year_chosen, filter1_chosen, filter2_chosen):
         else:
             raise dash.exceptions.PreventUpdate
 
-    if filter1_chosen == "Sales":
-        if filter2_chosen == "Region":
+    if filter1_chosen == "Omzet":
+        if filter2_chosen == "Regio":
             if year_chosen > 0:
                 df_year = df[df["OrderYear"] == year_chosen]
                 sales_region = []
                 for i in sorted(df_year["Region"].unique()):
                     sales_region.append(df_year[df_year["Region"] == i]["Sales"].sum())
                 fig = px.bar(x=sorted(df_year["Region"].unique()), y=sales_region, text=np.round(sales_region,2),
-                             title=f"Sales per region in {year_chosen}")
-                fig.update_layout(xaxis_title="Region",
-                                  yaxis_title="Sales", )
+                             title=f"Omzet per regio in {year_chosen}")
+                fig.update_layout(xaxis_title="Regio",
+                                  yaxis_title="Omzet", )
                 return fig
 
             if year_chosen == 0:
                 raise dash.exceptions.PreventUpdate
 
-        if filter2_chosen == "Ship Mode":
+        if filter2_chosen == "Verzendmethode":
             if year_chosen > 0:
                 df_year = df[df["OrderYear"] == year_chosen]
                 sales_shipmode = []
                 for i in sorted(df_year["Ship Mode"].unique()):
                     sales_shipmode.append(df_year[df_year["Ship Mode"] == i]["Sales"].sum())
                 fig = px.bar(x=sorted(df_year["Ship Mode"].unique()), y=sales_shipmode,text=np.round(sales_shipmode,2),
-                             title=f"Sales per ship mode in {year_chosen}")
-                fig.update_layout(xaxis_title="Ship Mode",
-                                  yaxis_title="Sales", )
+                             title=f"Omzet per verzendmethode in {year_chosen}")
+                fig.update_layout(xaxis_title="Verzendmethode",
+                                  yaxis_title="Omzet", )
                 return fig
 
             if year_chosen == 0:
                 raise dash.exceptions.PreventUpdate
 
-        if filter2_chosen == "Category":
+        if filter2_chosen == "Categorie":
             if year_chosen > 0:
                 df_year = df[df["OrderYear"] == year_chosen]
                 sales_category = []
                 for i in sorted(df_year["Category"].unique()):
                     sales_category.append(df_year[df_year["Category"] == i]["Sales"].sum())
                 fig = px.bar(x=sorted(df_year["Category"].unique()), y=sales_category, text=np.round(sales_category,2),
-                             title=f"Sales per category in {year_chosen}")
-                fig.update_layout(xaxis_title="Category",
-                                  yaxis_title="Sales", )
+                             title=f"Omzet per categorie in {year_chosen}")
+                fig.update_layout(xaxis_title="Categorie",
+                                  yaxis_title="Omzet", )
                 return fig
 
             if year_chosen == 0:
@@ -394,9 +415,9 @@ def get_graph(year_chosen, filter1_chosen, filter2_chosen):
                     sales_segment.append(
                         df_year[df_year["Segment"] == i]["Sales"].sum())
                 fig = px.bar(x=sorted(df_year["Segment"].unique()), y=sales_segment, text=np.round(sales_segment,2),
-                             title=f"Sales per segment in {year_chosen}")
+                             title=f"Omzet per segment in {year_chosen}")
                 fig.update_layout(xaxis_title="Segment",
-                                  yaxis_title="Sales", )
+                                  yaxis_title="Omzet", )
                 return fig
 
             if year_chosen == 0:
@@ -416,7 +437,7 @@ def get_graph(year_chosen, filter1_chosen, filter2_chosen):
     )
 def make_fig(year_chosen, filter_chosen):
     if year_chosen > 0:
-        if filter_chosen == "Profit":
+        if filter_chosen == "Winst":
             month_lookup = list(month_name)
             df_year = df[df["OrderYear"] == year_chosen]
             profits_month = []
@@ -424,12 +445,12 @@ def make_fig(year_chosen, filter_chosen):
             for i in months:
                 profits_month.append(df_year[df_year["OrderMonth"] == i]["Profit"].sum())
 
-            fig = px.line(x=months, y=profits_month, title=f"Profit per month in {year_chosen}")
-            fig.update_layout(xaxis_title="Month",
-                            yaxis_title="Profit")
+            fig = px.line(x=months, y=profits_month, title=f"Winst per maand in {year_chosen}")
+            fig.update_layout(xaxis_title="Maand",
+                            yaxis_title="Winst")
             return fig
 
-        if filter_chosen == "Sales":
+        if filter_chosen == "Omzet":
             month_lookup = list(month_name)
             df_year = df[df["OrderYear"] == year_chosen]
             sales_month = []
@@ -437,12 +458,12 @@ def make_fig(year_chosen, filter_chosen):
             for i in months:
                 sales_month.append(df_year[df_year["OrderMonth"] == i]["Sales"].sum())
 
-            fig = px.line(x=months, y=sales_month, title=f"Sales per month in {year_chosen}")
-            fig.update_layout(xaxis_title="Month",
-                              yaxis_title="Sales")
+            fig = px.line(x=months, y=sales_month, title=f"Omzet per maand in {year_chosen}")
+            fig.update_layout(xaxis_title="Maand",
+                              yaxis_title="Omzet")
             return fig
 
-        if filter_chosen == "Orders":
+        if filter_chosen == "Bestellingen":
             month_lookup = list(month_name)
             df_year = df[df["OrderYear"] == year_chosen]
             orders_month = []
@@ -450,12 +471,12 @@ def make_fig(year_chosen, filter_chosen):
             for i in months:
                 orders_month.append(len(df_year[df_year["OrderMonth"] == i]["Order ID"].unique()))
 
-            fig = px.line(x=months, y=orders_month, title=f"Orders per month in {year_chosen}")
-            fig.update_layout(xaxis_title="Month",
-                              yaxis_title="Orders")
+            fig = px.line(x=months, y=orders_month, title=f"Bestellingen per maand in {year_chosen}")
+            fig.update_layout(xaxis_title="Maand",
+                              yaxis_title="Bestellingen")
             return fig
 
-        if filter_chosen == "Average Profit":
+        if filter_chosen == "Gemiddelde winst":
             month_lookup = list(month_name)
             df_year = df[df["OrderYear"] == year_chosen]
             avg_profits_month = []
@@ -463,9 +484,9 @@ def make_fig(year_chosen, filter_chosen):
             for i in months:
                 avg_profits_month.append(df_year[df_year["OrderMonth"] == i]["Profit"].mean())
 
-            fig = px.line(x=months, y=avg_profits_month, title=f"Profit per month in {year_chosen}")
-            fig.update_layout(xaxis_title="Month",
-                              yaxis_title="Average Profit")
+            fig = px.line(x=months, y=avg_profits_month, title=f"Gemiddelde winst per maand in {year_chosen}")
+            fig.update_layout(xaxis_title="Maand",
+                              yaxis_title="Gemiddelde winst")
             return fig
 
         else:
