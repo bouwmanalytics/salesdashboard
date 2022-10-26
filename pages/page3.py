@@ -47,6 +47,7 @@ X = df2[['Region', 'Category', 'Sub-Category', 'Sales', 'Quantity', 'Discount',
 y = df2["Profit"]
 
 
+
 X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.2, random_state=40)
 model = RandomForestRegressor(random_state = 40)
 best_params = {'n_estimators': 200,
@@ -73,31 +74,6 @@ def generate_results_dataset(preds, ci, months):
         df['lower'] = preds + ci
 
     return df
-
-layout = html.Div(
-    [
-        dbc.Row([
-            dbc.Col([
-                html.H2('Voorspellingen',
-                        style=TEXT_STYLE)]),
-            dbc.Col([
-                html.P("Kies een jaar",style={"margin-top": "10px", "width": "100%"}),
-                dcc.Dropdown([2018,2019,2020,2021,2022], 2018, id="year_dropdown"),
-            ]),
-
-        ]),
-        dbc.Row([
-            dcc.Graph(id="prediction_graph", figure={})
-        ])
-
-
-
-])
-
-@callback(
-    Output("prediction_graph",  "figure"),
-    [Input("year_dropdown", "value")],
-)
 def get_graph(year):
     alpha = 0.05
     test = X.sample(400, random_state=42)
@@ -109,8 +85,9 @@ def get_graph(year):
     pred = dff.groupby("OrderMonthNr")["prediction"].sum()
     upper = dff.groupby("OrderMonthNr")["upper"].sum()
     lower = dff.groupby("OrderMonthNr")["lower"].sum()
-    months = np.array(range(1, 13))
-    fig = px.line(x=months, y=pred, title="Winst voorspelling in 2020")
+    months = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni',
+              'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December']
+    fig = px.line(x=months, y=pred, title="Winst voorspelling in 2018")
     fig.update_traces(line_color='black', line_width=1)
     fig.add_traces(go.Scatter(x=months, y=lower,
                               line=dict(color='grey'),
@@ -130,5 +107,28 @@ def get_graph(year):
     fig.data[2].line.color = "blue"
 
     return fig
+
+fig = get_graph(2018)
+
+layout = html.Div(
+    [
+        dbc.Row([
+            dbc.Col([
+                html.H2('Voorspelling volgend jaar',
+                        style=TEXT_STYLE)]),
+        ]),
+        dbc.Row([
+            html.Hr(style={"margin-top": "30px","border-width": "0 0 1px 0"}),
+        ]),
+        dbc.Row([
+            dcc.Graph(id="prediction_graph", figure=fig)
+        ])
+
+
+
+])
+
+
+
 
 
