@@ -20,6 +20,26 @@ df["OrderDate"] = pd.to_datetime(df["Order Date"])
 df["OrderYear"] = df.OrderDate.dt.year
 df["OrderMonth"] = df.OrderDate.dt.month_name()
 df["OrderMonthNr"] = df.OrderDate.dt.month
+
+def replace_all(text, dic):
+    for i, j in dic.items():
+        text = text.str.replace(i, j)
+    return text
+
+dic={
+    "June": "Juni",
+    "January": "Januari",
+    "February": "Februari",
+    "March": "Maart",
+    "May": "Mei",
+    "July": "Juli",
+    "August": "Augustus",
+    "October": "Oktober"
+}
+
+df.OrderMonth = replace_all(df.OrderMonth,dic)
+
+
 TEXT_STYLE = {
     #'textAlign': 'center',
     'color': '#000000'
@@ -30,18 +50,14 @@ layout = html.Div([
     dbc.Row([
             dbc.Col([
                 html.H2('Algemene Analyse',
-                        style={"margin-top": "40px"})]),
-            dbc.Col([
-                html.Button("Uitleg", id="btn-download-txt", style = {"margin-top": "40px",'display': 'inline-block','margin-left': '350px'}),
-                dcc.Download(id="download-text")
-            ])
+                        style=TEXT_STYLE)]),
         ]),
     dbc.Row([
             html.Hr(style={"margin-top": "30px","border-width": "0 0 1px 0"}),
         ]),
     dbc.Row([
         html.P("Kies een filter",style={"margin-top": "10px"}),
-        dcc.Dropdown(["Orders","Sales", "Profit", "Average Profit"], "Orders", id="filter_dropdown"),
+        dcc.Dropdown(["Bestellingen","Omzet", "Winst", "Gemiddelde winst"], "Bestellingen", id="filter_dropdown"),
         ]),
 
     dbc.Row([
@@ -72,27 +88,27 @@ layout = html.Div([
     [Input("filter_dropdown","value")],
 )
 def get_graph(filter_chosen):
-    if filter_chosen == "Orders":
+    if filter_chosen == "Bestellingen":
         norders_years = df.groupby("OrderYear")["Order ID"].nunique()
         fig_norders = px.bar(norders_years, x=norders_years.index, y=norders_years.values,text=np.round(norders_years.values,2))
         fig_norders.update_layout(xaxis_title="Jaar",
                                   yaxis_title="Totale bestellingen", title="Totaal aantal bestellingen per jaar")
         return fig_norders
 
-    if filter_chosen == "Sales":
+    if filter_chosen == "Omzet":
         sales_years = df.groupby("OrderYear")["Sales"].sum()
         fig_sales_years = px.bar(sales_years, x=sales_years.index, y=sales_years.values,text=np.round(sales_years.values,2))
         fig_sales_years.update_layout(xaxis_title="Jaar",
                                       yaxis_title="Totale omzet", title="Totale omzet per jaar")
         return fig_sales_years
-    if filter_chosen == "Profit":
+    if filter_chosen == "Winst":
         profit_years = df.groupby("OrderYear")["Profit"].sum()
         fig_profit_years = px.bar(profit_years, x=profit_years.index, y=profit_years.values,text=np.round(profit_years.values,2))
         fig_profit_years.update_layout(xaxis_title="Jaar",
                                        yaxis_title="Totale winst", title="Totale winst per jaar")
 
         return fig_profit_years
-    if filter_chosen == "Average Profit":
+    if filter_chosen == "Gemiddelde winst":
         avg_profit_years = df.groupby("OrderYear")["Profit"].mean()
         fig_avg_profit_years = px.bar(avg_profit_years, x=avg_profit_years.index, y=avg_profit_years.values,text=np.round(avg_profit_years.values,2))
         fig_avg_profit_years.update_layout(xaxis_title="Jaar",
@@ -108,35 +124,35 @@ def get_graph(filter_chosen):
     [Input("filter_dropdown","value")],
 )
 def get_graph(filter_chosen):
-    if filter_chosen == "Orders":
+    if filter_chosen == "Bestellingen":
         norders_month = df.groupby("OrderMonth")["Order ID"].nunique()
         norders_month = norders_month.sort_values(ascending=False).head(5)
         fig_norders = px.bar(norders_month, x=norders_month.index, y=norders_month.values , text=np.round(norders_month.values,2))
         fig_norders.update_layout(xaxis_title="Maand",
-                                  yaxis_title="Totale bestellingen", title="Totaal aantal bestellingen per maand")
+                                  yaxis_title="Totale bestellingen", title="Maanden met hoogste aantal bestellingen")
         return fig_norders
 
-    if filter_chosen == "Sales":
+    if filter_chosen == "Omzet":
         sales_month = df.groupby("OrderMonth")["Sales"].sum()
         sales_month = sales_month.sort_values(ascending=False).head(5)
         fig_sales_years = px.bar(sales_month, x=sales_month.index, y=sales_month.values,text=np.round(sales_month.values,2))
         fig_sales_years.update_layout(xaxis_title="Maand",
-                                      yaxis_title="Totale omzet", title="Totale omzet per maand")
+                                      yaxis_title="Totale omzet", title="Maanden met hoogste omzet")
         return fig_sales_years
-    if filter_chosen == "Profit":
+    if filter_chosen == "Winst":
         profit_month = df.groupby("OrderMonth")["Profit"].sum()
         profit_month = profit_month.sort_values(ascending=False).head(5)
         fig_profit_month = px.bar(profit_month, x=profit_month.index, y=profit_month.values, text=np.round(profit_month.values,2))
         fig_profit_month.update_layout(xaxis_title="Maand",
-                                       yaxis_title="Totale winst", title="Totale winst per maand")
+                                       yaxis_title="Totale winst", title="Maanden met hoogste winst")
 
         return fig_profit_month
-    if filter_chosen == "Average Profit":
+    if filter_chosen == "Gemiddelde winst":
         avg_profit_month = df.groupby("OrderMonth")["Profit"].mean()
         avg_profit_month = avg_profit_month.sort_values(ascending=False).head(5)
         fig_avg_profit_month = px.bar(avg_profit_month, x=avg_profit_month.index, y=avg_profit_month.values, text=np.round(avg_profit_month.values,2))
         fig_avg_profit_month.update_layout(xaxis_title="Maand",
-                                           yaxis_title="Gemiddelde winst", title="Gemiddelde winst per bestelling per maand")
+                                           yaxis_title="Gemiddelde winst", title="Maanden met hoogste gemiddelde winst")
 
         return fig_avg_profit_month
 
